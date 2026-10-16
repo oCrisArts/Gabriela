@@ -864,121 +864,189 @@ footer > span {
   letter-spacing: .64px;
 }
 
-.reveal {
+
+/* Motion system: gatilho individual, único e previsível ao entrar na viewport. */
+.site-shell.motion-enabled .reveal,
+.site-shell.motion-enabled .service-card,
+.site-shell.motion-enabled .credential-card,
+.site-shell.motion-enabled .team-story p,
+.site-shell.motion-enabled .contact dl > div {
   opacity: 0;
-  transform: translateY(42px);
-  transition: opacity .85s cubic-bezier(.22, 1, .36, 1), transform .85s cubic-bezier(.22, 1, .36, 1);
-  will-change: opacity, transform;
-}
-
-.reveal-delay {
-  transition-delay: .16s;
-}
-
-.section-in-view .reveal {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.hero-copy > *,
-.section-intro > *,
-.team-content > *,
-.journey-intro > *,
-.flow-copy > *,
-.contact-copy > *,
-.panel-body > * {
-  opacity: 0;
-  transform: translateY(18px);
+  transform: translate3d(0, 32px, 0);
   transition:
-    opacity .65s ease,
-    transform .65s cubic-bezier(.22, 1, .36, 1);
+    opacity .85s cubic-bezier(.22, 1, .36, 1),
+    transform .85s cubic-bezier(.22, 1, .36, 1),
+    border-color .3s ease,
+    background-color .3s ease;
+  transition-delay: var(--reveal-delay, 0ms);
 }
 
-.site-ready .hero.section-in-view .hero-copy > *,
-.section-in-view .section-intro > *,
-.section-in-view .team-content > *,
-.section-in-view .journey-intro > *,
-.section-in-view .flow-copy > *,
-.section-in-view .contact-copy > *,
-.section-in-view .panel-body > * {
+.site-shell.motion-enabled .reveal.is-visible,
+.site-shell.motion-enabled .service-card.is-visible,
+.site-shell.motion-enabled .credential-card.is-visible,
+.site-shell.motion-enabled .team-story p.is-visible,
+.site-shell.motion-enabled .contact dl > div.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
-.section-in-view .hero-copy > :nth-child(2),
-.section-in-view .section-intro > :nth-child(2),
-.section-in-view .team-content > :nth-child(2),
-.section-in-view .journey-intro > :nth-child(2),
-.section-in-view .flow-copy > :nth-child(2),
-.section-in-view .contact-copy > :nth-child(2),
-.section-in-view .panel-body > :nth-child(2) {
-  transition-delay: .1s;
+.service-list > :nth-child(2),
+.credential-track > :nth-child(2),
+.team-story > :nth-child(2),
+.contact dl > :nth-child(2) { --reveal-delay: 90ms; }
+.service-list > :nth-child(3),
+.credential-track > :nth-child(3),
+.team-story > :nth-child(3),
+.contact dl > :nth-child(3) { --reveal-delay: 180ms; }
+.service-list > :nth-child(4),
+.credential-track > :nth-child(4) { --reveal-delay: 270ms; }
+.service-list > :nth-child(5),
+.credential-track > :nth-child(5) { --reveal-delay: 360ms; }
+
+.reveal-delay { --reveal-delay: 130ms; }
+
+/* Hierarquia editorial: títulos, descrições e ações entram em sequência. */
+.site-ready.motion-enabled .hero-copy.is-visible > *,
+.site-ready.motion-enabled .section-intro.is-visible > *,
+.site-ready.motion-enabled .team-content.is-visible > *,
+.site-ready.motion-enabled .journey-intro.is-visible > *,
+.site-ready.motion-enabled .flow-copy.is-visible > *,
+.site-ready.motion-enabled .contact-copy.is-visible > * {
+  animation: editorial-rise .8s cubic-bezier(.22, 1, .36, 1) both;
+}
+.site-ready.motion-enabled .hero-copy.is-visible > :nth-child(2),
+.site-ready.motion-enabled .section-intro.is-visible > :nth-child(2),
+.site-ready.motion-enabled .team-content.is-visible > :nth-child(2),
+.site-ready.motion-enabled .journey-intro.is-visible > :nth-child(2),
+.site-ready.motion-enabled .flow-copy.is-visible > :nth-child(2),
+.site-ready.motion-enabled .contact-copy.is-visible > :nth-child(2) { animation-delay: 110ms; }
+.site-ready.motion-enabled .hero-copy.is-visible > :nth-child(3),
+.site-ready.motion-enabled .section-intro.is-visible > :nth-child(3),
+.site-ready.motion-enabled .team-content.is-visible > :nth-child(3),
+.site-ready.motion-enabled .journey-intro.is-visible > :nth-child(3),
+.site-ready.motion-enabled .flow-copy.is-visible > :nth-child(3),
+.site-ready.motion-enabled .contact-copy.is-visible > :nth-child(3) { animation-delay: 210ms; }
+.site-ready.motion-enabled .team-content.is-visible > :nth-child(4),
+.site-ready.motion-enabled .journey-intro.is-visible > :nth-child(4),
+.site-ready.motion-enabled .flow-copy.is-visible > :nth-child(4),
+.site-ready.motion-enabled .contact-copy.is-visible > :nth-child(4) { animation-delay: 290ms; }
+
+@keyframes editorial-rise {
+  from { opacity: 0; transform: translate3d(0, 19px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
-.section-in-view .hero-copy > :nth-child(3),
-.section-in-view .section-intro > :nth-child(3),
-.section-in-view .team-content > :nth-child(3),
-.section-in-view .journey-intro > :nth-child(3),
-.section-in-view .flow-copy > :nth-child(3),
-.section-in-view .contact-copy > :nth-child(3),
-.section-in-view .panel-body > :nth-child(3) {
-  transition-delay: .2s;
+/* Scroll-driven photography: foreground stays readable while background moves. */
+.parallax-photo {
+  transform: translate3d(0, var(--parallax-y, 0px), 0) scale(1.12);
+}
+@media (max-width: 800px) {
+  .parallax-photo { transform: scale(1.04); }
 }
 
-.section-in-view .team-content > :nth-child(4),
-.section-in-view .journey-intro > :nth-child(4),
-.section-in-view .flow-copy > :nth-child(4),
-.section-in-view .contact-copy > :nth-child(4),
-.section-in-view .panel-body > :nth-child(4) {
-  transition-delay: .3s;
+/* Interações discretas e consistentes com a identidade atual. */
+.site-shell.motion-enabled .service-card.is-visible:hover {
+  transform: translate3d(6px, -2px, 0);
+  border-color: rgb(223 135 29 / 70%);
+  background: rgb(16 23 17 / 68%);
+  transition-delay: 0ms;
+}
+.service-card > img,
+.credential-card > img {
+  transition: transform .75s cubic-bezier(.22, 1, .36, 1);
+}
+.service-card:hover > img,
+.credential-card:hover > img {
+  transform: scale(1.065);
+}
+.orange-button,
+.main-nav .nav-cta {
+  transition: background-color .25s ease, box-shadow .25s ease, transform .3s ease;
+}
+.orange-button:hover,
+.main-nav .nav-cta:hover {
+  background: #ed982e;
+  box-shadow: 0 10px 30px rgb(16 23 17 / 15%);
+  transform: translateY(-2px);
 }
 
-.section-in-view .flow-copy > :nth-child(5),
-.section-in-view .panel-body > :nth-child(5) {
-  transition-delay: .4s;
+/* Abertura cinematográfica com opção de pular e progresso real do vídeo. */
+.intro-ui {
+  position: absolute;
+  z-index: 6;
+  right: clamp(24px, 4.2vw, 81px);
+  bottom: 27px;
+  left: clamp(24px, 4.2vw, 81px);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: var(--paper);
+  font: 10px var(--sans);
+  letter-spacing: .1em;
 }
+.intro-ui > span { white-space: nowrap; }
+.intro-track {
+  position: relative;
+  height: 2px;
+  flex: 1;
+  overflow: hidden;
+  background: rgb(238 234 224 / 30%);
+}
+.intro-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--orange);
+  transform: scaleX(var(--intro-progress, 0));
+  transform-origin: left center;
+  transition: transform .15s linear;
+}
+.intro-ui button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  padding: 10px 0;
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.intro-ui button:hover { color: var(--orange); }
 
-.service-card,
-.credential-card,
-.team-story p,
-.contact dl > div {
+.scroll-progress {
+  position: fixed;
+  z-index: 51;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--orange);
   opacity: 0;
-  transform: translateY(22px);
+  pointer-events: none;
+  transform: scaleX(var(--page-progress, 0));
+  transform-origin: left center;
+  transition: opacity .5s ease;
+}
+.site-ready .scroll-progress { opacity: .9; }
+.site-header.scrolled {
+  background: rgb(16 23 17 / 77%);
+  border-bottom: 1px solid rgb(238 234 224 / 12%);
+  backdrop-filter: blur(16px);
+}
+.site-header {
   transition:
-    opacity .65s ease,
-    transform .65s cubic-bezier(.22, 1, .36, 1);
+    opacity .8s ease,
+    transform .8s cubic-bezier(.22, 1, .36, 1),
+    background-color .35s ease,
+    border-color .35s ease;
 }
-
-.section-in-view .service-card,
-.section-in-view .credential-card,
-.section-in-view .team-story p,
-.section-in-view .contact-copy dl > div {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.section-in-view .service-card:nth-child(2),
-.section-in-view .credential-card:nth-child(2),
-.section-in-view .team-story p:nth-child(2),
-.section-in-view .contact-copy dl > div:nth-child(2) {
-  transition-delay: .1s;
-}
-
-.section-in-view .service-card:nth-child(3),
-.section-in-view .credential-card:nth-child(3),
-.section-in-view .team-story p:nth-child(3),
-.section-in-view .contact-copy dl > div:nth-child(3) {
-  transition-delay: .2s;
-}
-
-.section-in-view .service-card:nth-child(4),
-.section-in-view .credential-card:nth-child(4) {
-  transition-delay: .3s;
-}
-
-.section-in-view .service-card:nth-child(5),
-.section-in-view .credential-card:nth-child(5) {
-  transition-delay: .4s;
+@media (max-width: 800px) {
+  .intro-ui { gap: 12px; flex-wrap: wrap; bottom: 16px; }
+  .intro-ui > span { width: 100%; }
+  .intro-track { min-width: 60px; }
 }
 
 @media (max-width: 1400px) {

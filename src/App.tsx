@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const A = "/assets"
 const whatsappUrl =
@@ -138,68 +138,167 @@ function App() {
   const [activeSection, setActiveSection] = useState("inicio")
   const [menuOpen, setMenuOpen] = useState(false)
   const [introFinished, setIntroFinished] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Animação de abertura: o site só é liberado depois do vídeo, ou de um fallback.
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const syncMotionPreference = () => {
+      setReducedMotion(preference.matches)
+      if (preference.matches) {
+        videoRef.current?.pause()
+        setIntroFinished(true)
+      }
+    }
+    syncMotionPreference()
+    preference.addEventListener("change", syncMotionPreference)
+    return () => preference.removeEventListener("change", syncMotionPreference)
+  }, [])
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches
+    document.body.classList.toggle("intro-locked", !introFinished)
+    if (introFinished) {
+      return () => document.body.classList.remove("intro-locked")
+    }
 
-    if (reduceMotion) {
-      setIntroFinished(true)
+    // Falha de rede, codec ou autoplay nunca deve bloquear a navegação.
+    const watchdog = window.setTimeout(() => setIntroFinished(true), 20000)
+    return () => {
+      window.clearTimeout(watchdog)
+      document.body.classList.remove("intro-locked")
+    }
+  }, [introFinished])
+
+  // Cada componente aparece uma vez ao entrar na viewport; voltar no scroll
+  // não oculta o conteúdo que o visitante já leu.
+  useEffect(() => {
+    if (!introFinished) return
+
+    const targets = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        ".reveal, .service-card, .credential-card, .team-story p, .contact dl > div",
+      ),
+    )
+    const show = (element: Element) => element.classList.add("is-visible")
+    const hero = document.querySelector(".hero-copy")
+    if (hero) show(hero)
+
+    if (reducedMotion || !("IntersectionObserver" in window)) {
+      targets.forEach(show)
       return
     }
 
-    document.body.classList.add("intro-locked")
-    return () => document.body.classList.remove("intro-locked")
-  }, [])
-
-  useEffect(() => {
-    if (introFinished) document.body.classList.remove("intro-locked")
-  }, [introFinished])
-
-  useEffect(() => {
-    const sectionObserver = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          entry.target.classList.toggle("section-in-view", entry.isIntersecting)
+          if (entry.isIntersecting) {
+            show(entry.target)
+            observer.unobserve(entry.target)
+          }
         })
       },
-      {
-        rootMargin: "-10% 0px -10% 0px",
-        threshold: 0.12,
-      },
+      { threshold: 0.08, rootMargin: "0px 0px -8% 0px" },
     )
-    document
-      .querySelectorAll("main > section")
-      .forEach((section) => sectionObserver.observe(section))
+    targets.forEach((target) => {
+      if (!target.closest(".hero")) observer.observe(target)
+    })
+    return () => observer.disconnect()
+  }, [introFinished, reducedMotion])
 
-    const spyObserver = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-        if (visible) setActiveSection(visible.target.id)
-      },
-      { rootMargin: "-25% 0px -55% 0px", threshold: [0, 0.2, 0.5] },
+  // Scrollspy estável, progresso de leitura e header com contraste no scroll.
+  useEffect(() => {
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>("main > section[id]"),
     )
-    document
-      .querySelectorAll("main > section[id]")
-      .forEach((section) => spyObserver.observe(section))
-
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const focusY = window.scrollY + window.innerHeight * 0.42
+      let current = "inicio"
+      sections.forEach((section) => {
+        if (section.offsetTop <= focusY) current = section.id
+      })
+      setActiveSection((previous) => (previous === current ? previous : current))
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight
+      const progress = scrollable > 0 ? window.scrollY / scrollable : 0
+      document.documentElement.style.setProperty(
+        "--page-progress",
+        String(Math.max(0, Math.min(1, progress))),
+      )
+      document.querySelector(".site-header")?.classList.toggle(
+        "scrolled",
+        window.scrollY > 36,
+      )
+    }
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(measure)
+    }
+    measure()
+    window.addEventListener("scroll", schedule, { passive: true })
+    window.addEventListener("resize", schedule)
     return () => {
-      sectionObserver.disconnect()
-      spyObserver.disconnect()
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", schedule)
+      window.removeEventListener("resize", schedule)
+      document.documentElement.style.removeProperty("--page-progress")
     }
   }, [])
 
+  // Parallax suave apenas nas fotografias e sem re-renderizar o React.
+  useEffect(() => {
+    if (!introFinished || reducedMotion) return
+    const desktop = window.matchMedia("(min-width: 801px)")
+    const images = Array.from(
+      document.querySelectorAll<HTMLImageElement>(".parallax-photo"),
+    )
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      images.forEach((image) => {
+        if (!desktop.matches) {
+          image.style.removeProperty("--parallax-y")
+          return
+        }
+        const section = image.closest("section")
+        if (!section) return
+        const rect = section.getBoundingClientRect()
+        if (rect.bottom < 0 || rect.top > window.innerHeight) return
+        const center = rect.top + rect.height / 2
+        const range = (window.innerHeight + rect.height) / 2
+        const normalized = (window.innerHeight / 2 - center) / range
+        const offset = Math.max(-66, Math.min(66, normalized * 66))
+        image.style.setProperty("--parallax-y", offset.toFixed(1) + "px")
+      })
+    }
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(measure)
+    }
+    measure()
+    window.addEventListener("scroll", schedule, { passive: true })
+    window.addEventListener("resize", schedule)
+    desktop.addEventListener("change", schedule)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", schedule)
+      window.removeEventListener("resize", schedule)
+      desktop.removeEventListener("change", schedule)
+      images.forEach((image) => image.style.removeProperty("--parallax-y"))
+    }
+  }, [introFinished, reducedMotion])
+
   const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+    document.getElementById(id)?.scrollIntoView({
+      behavior: reducedMotion ? "auto" : "smooth",
+      block: "start",
+    })
+    setActiveSection(id)
     setMenuOpen(false)
   }
 
   return (
     <div
-      className={`site-shell ${introFinished ? "site-ready" : "intro-playing"}`}
+      className={`site-shell ${introFinished ? "site-ready" : "intro-playing"}${reducedMotion ? "" : " motion-enabled"}`}
     >
       <header className="site-header">
         <button
@@ -226,6 +325,7 @@ function App() {
             <button
               key={item.id}
               className={activeSection === item.id ? "active" : ""}
+              aria-current={activeSection === item.id ? "location" : undefined}
               onClick={() => scrollTo(item.id)}
             >
               {item.label}
@@ -236,21 +336,45 @@ function App() {
           </button>
         </nav>
       </header>
+      <div className="scroll-progress" aria-hidden="true" />
 
       <main>
         <section className="hero photo-section" id="inicio">
           <video
+            ref={videoRef}
             className="section-photo hero-video"
             src={`${A}/macaw.mp4`}
             poster={`${A}/3856a.png`}
-            autoPlay
+            autoPlay={!reducedMotion}
             muted
             playsInline
             preload="auto"
             aria-hidden="true"
+            onCanPlay={(event) => {
+              if (!introFinished && !reducedMotion && event.currentTarget.paused) {
+                void event.currentTarget.play().catch(() => setIntroFinished(true))
+              }
+            }}
+            onTimeUpdate={(event) => {
+              const video = event.currentTarget
+              const progress = video.duration > 0 ? video.currentTime / video.duration : 0
+              document.documentElement.style.setProperty(
+                "--intro-progress",
+                String(Math.max(0, Math.min(1, progress))),
+              )
+            }}
             onEnded={() => setIntroFinished(true)}
             onError={() => setIntroFinished(true)}
           />
+          {!introFinished && (
+            <div className="intro-ui" aria-label="Apresentação em vídeo">
+              <span>GABRIELA · MEDICINA VETERINÁRIA</span>
+              <div className="intro-track" aria-hidden="true" />
+              <button type="button" onClick={() => setIntroFinished(true)}>
+                Pular introdução <Arrow />
+              </button>
+            </div>
+          )}
           <div className="photo-shade hero-shade" />
           <div className="hero-copy reveal" data-reveal>
             <Eyebrow>
