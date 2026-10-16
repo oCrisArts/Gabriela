@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const A = "/assets"
 const whatsappUrl =
@@ -138,6 +138,12 @@ function App() {
   const [activeSection, setActiveSection] = useState("inicio")
   const [menuOpen, setMenuOpen] = useState(false)
   const [introFinished, setIntroFinished] = useState(false)
+  const introVideoRef = useRef<HTMLVideoElement>(null)
+
+  const finishIntro = () => {
+    introVideoRef.current?.pause()
+    setIntroFinished(true)
+  }
 
   useEffect(() => {
     const reduceMotion = window.matchMedia(
@@ -150,6 +156,8 @@ function App() {
     }
 
     document.body.classList.add("intro-locked")
+    const playback = introVideoRef.current?.play()
+    playback?.catch(finishIntro)
     return () => document.body.classList.remove("intro-locked")
   }, [])
 
@@ -158,20 +166,44 @@ function App() {
   }, [introFinished])
 
   useEffect(() => {
-    const sectionObserver = new IntersectionObserver(
+    if (introFinished) return
+
+    const fallbackTimer = window.setTimeout(finishIntro, 30000)
+    return () => window.clearTimeout(fallbackTimer)
+  }, [introFinished])
+
+  useEffect(() => {
+    const staggerGroups = document.querySelectorAll<HTMLElement>(
+      ".hero-copy, .section-intro, .team-content, .journey-intro, .flow-copy, .contact-copy, .panel-body, .service-list, .credential-track, .team-story, .contact dl",
+    )
+
+    staggerGroups.forEach((group) => {
+      Array.from(group.children).forEach((child, index) => {
+        ;(child as HTMLElement).style.setProperty(
+          "--reveal-delay",
+          `${Math.min(index, 5) * 90}ms`,
+        )
+      })
+    })
+
+    const revealTargets = document.querySelectorAll<HTMLElement>(
+      ".reveal, .hero-copy > *, .section-intro > *, .team-content > *, .journey-intro > *, .flow-copy > *, .contact-copy > *, .panel-body > *, .service-card, .credential-card, .team-story p, .contact dl > div",
+    )
+
+    const revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          entry.target.classList.toggle("section-in-view", entry.isIntersecting)
+          if (!entry.isIntersecting) return
+          entry.target.classList.add("is-visible")
+          revealObserver.unobserve(entry.target)
         })
       },
       {
-        rootMargin: "-10% 0px -10% 0px",
-        threshold: 0.12,
+        rootMargin: "0px 0px -8% 0px",
+        threshold: 0.1,
       },
     )
-    document
-      .querySelectorAll("main > section")
-      .forEach((section) => sectionObserver.observe(section))
+    revealTargets.forEach((element) => revealObserver.observe(element))
 
     const spyObserver = new IntersectionObserver(
       (entries) => {
@@ -187,8 +219,55 @@ function App() {
       .forEach((section) => spyObserver.observe(section))
 
     return () => {
-      sectionObserver.disconnect()
+      revealObserver.disconnect()
       spyObserver.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches
+    if (reduceMotion) return
+
+    const photos = Array.from(
+      document.querySelectorAll<HTMLElement>(".parallax-photo"),
+    )
+    let animationFrame = 0
+
+    const updateParallax = () => {
+      animationFrame = 0
+      const viewportHeight = window.innerHeight
+
+      photos.forEach((photo) => {
+        const section = photo.closest("section")
+        if (!section) return
+        const rect = section.getBoundingClientRect()
+        if (rect.bottom < 0 || rect.top > viewportHeight) return
+
+        const sectionCenter = rect.top + rect.height / 2
+        const viewportCenter = viewportHeight / 2
+        const offset = Math.max(
+          -28,
+          Math.min(28, (viewportCenter - sectionCenter) * 0.045),
+        )
+        photo.style.setProperty("--parallax-y", `${offset}px`)
+      })
+    }
+
+    const requestParallaxUpdate = () => {
+      if (!animationFrame)
+        animationFrame = requestAnimationFrame(updateParallax)
+    }
+
+    updateParallax()
+    window.addEventListener("scroll", requestParallaxUpdate, { passive: true })
+    window.addEventListener("resize", requestParallaxUpdate)
+
+    return () => {
+      window.removeEventListener("scroll", requestParallaxUpdate)
+      window.removeEventListener("resize", requestParallaxUpdate)
+      if (animationFrame) cancelAnimationFrame(animationFrame)
     }
   }, [])
 
@@ -240,6 +319,7 @@ function App() {
       <main>
         <section className="hero photo-section" id="inicio">
           <video
+            ref={introVideoRef}
             className="section-photo hero-video"
             src={`${A}/macaw.mp4`}
             poster={`${A}/3856a.png`}
@@ -248,9 +328,18 @@ function App() {
             playsInline
             preload="auto"
             aria-hidden="true"
-            onEnded={() => setIntroFinished(true)}
-            onError={() => setIntroFinished(true)}
+            onEnded={finishIntro}
+            onError={finishIntro}
+            onAbort={finishIntro}
           />
+          {!introFinished && (
+            <button className="skip-intro" type="button" onClick={finishIntro}>
+              Pular introdução
+              <span className="material-symbols-outlined" aria-hidden="true">
+                skip_next
+              </span>
+            </button>
+          )}
           <div className="photo-shade hero-shade" />
           <div className="hero-copy reveal" data-reveal>
             <Eyebrow>

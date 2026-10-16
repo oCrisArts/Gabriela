@@ -73,6 +73,7 @@ button:focus-visible, a:focus-visible {
 .site-ready .site-header {
   opacity: 1;
   transform: translateY(0);
+  transition-delay: .12s;
 }
 
 .brand, .main-nav, .menu-toggle {
@@ -114,6 +115,9 @@ button:focus-visible, a:focus-visible {
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    color .35s ease,
+    opacity .35s ease;
 }
 
 .main-nav button:not(.nav-cta)::after {
@@ -131,6 +135,10 @@ button:focus-visible, a:focus-visible {
 .main-nav button.active::after,
 .main-nav button:hover::after {
   transform: scaleX(1);
+}
+
+.main-nav button.active {
+  color: white;
 }
 
 .main-nav .nav-cta {
@@ -189,13 +197,70 @@ main > section {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.01);
+  transform: translate3d(0, var(--parallax-y, 0), 0) scale(1.08);
+  transform-origin: center;
+  will-change: transform;
 }
 
 .hero-video {
   z-index: 0;
   object-position: center;
   background: var(--ink);
+  transform: scale(1.01);
+  transition:
+    filter .9s ease,
+    transform .9s cubic-bezier(.22, 1, .36, 1);
+}
+
+.site-ready .hero-video {
+  filter: saturate(.92) brightness(.9);
+  transform: scale(1.025);
+}
+
+.skip-intro {
+  position: absolute;
+  z-index: 5;
+  right: clamp(20px, 4.2vw, 80px);
+  bottom: clamp(20px, 4.2vw, 56px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid rgb(238 234 224 / 28%);
+  border-radius: 999px;
+  background: rgb(16 23 17 / 34%);
+  color: rgb(238 234 224 / 82%);
+  font-size: 11px;
+  cursor: pointer;
+  backdrop-filter: blur(7px);
+  transition:
+    color .4s ease,
+    border-color .4s ease,
+    background .4s ease,
+    transform .4s cubic-bezier(.22, 1, .36, 1);
+  animation: skip-intro-in .6s ease .5s both;
+}
+
+.skip-intro .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.skip-intro:hover {
+  border-color: rgb(238 234 224 / 52%);
+  background: rgb(16 23 17 / 56%);
+  color: white;
+  transform: translateY(-2px);
+}
+
+@keyframes skip-intro-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-shade {
@@ -233,7 +298,7 @@ main > section {
   transform: translateY(32px);
 }
 
-.site-ready .hero.section-in-view .hero-copy {
+.site-ready .hero .hero-copy.is-visible {
   transition-delay: .35s;
 }
 
@@ -867,15 +932,17 @@ footer > span {
 .reveal {
   opacity: 0;
   transform: translateY(42px);
-  transition: opacity .85s cubic-bezier(.22, 1, .36, 1), transform .85s cubic-bezier(.22, 1, .36, 1);
+  transition:
+    opacity .85s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms),
+    transform .85s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms);
   will-change: opacity, transform;
 }
 
 .reveal-delay {
-  transition-delay: .16s;
+  --reveal-delay: 140ms;
 }
 
-.section-in-view .reveal {
+.reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -890,52 +957,19 @@ footer > span {
   opacity: 0;
   transform: translateY(18px);
   transition:
-    opacity .65s ease,
-    transform .65s cubic-bezier(.22, 1, .36, 1);
+    opacity .65s ease var(--reveal-delay, 0ms),
+    transform .65s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms);
 }
 
-.site-ready .hero.section-in-view .hero-copy > *,
-.section-in-view .section-intro > *,
-.section-in-view .team-content > *,
-.section-in-view .journey-intro > *,
-.section-in-view .flow-copy > *,
-.section-in-view .contact-copy > *,
-.section-in-view .panel-body > * {
+.site-ready .hero-copy > *.is-visible,
+.section-intro > *.is-visible,
+.team-content > *.is-visible,
+.journey-intro > *.is-visible,
+.flow-copy > *.is-visible,
+.contact-copy > *.is-visible,
+.panel-body > *.is-visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-.section-in-view .hero-copy > :nth-child(2),
-.section-in-view .section-intro > :nth-child(2),
-.section-in-view .team-content > :nth-child(2),
-.section-in-view .journey-intro > :nth-child(2),
-.section-in-view .flow-copy > :nth-child(2),
-.section-in-view .contact-copy > :nth-child(2),
-.section-in-view .panel-body > :nth-child(2) {
-  transition-delay: .1s;
-}
-
-.section-in-view .hero-copy > :nth-child(3),
-.section-in-view .section-intro > :nth-child(3),
-.section-in-view .team-content > :nth-child(3),
-.section-in-view .journey-intro > :nth-child(3),
-.section-in-view .flow-copy > :nth-child(3),
-.section-in-view .contact-copy > :nth-child(3),
-.section-in-view .panel-body > :nth-child(3) {
-  transition-delay: .2s;
-}
-
-.section-in-view .team-content > :nth-child(4),
-.section-in-view .journey-intro > :nth-child(4),
-.section-in-view .flow-copy > :nth-child(4),
-.section-in-view .contact-copy > :nth-child(4),
-.section-in-view .panel-body > :nth-child(4) {
-  transition-delay: .3s;
-}
-
-.section-in-view .flow-copy > :nth-child(5),
-.section-in-view .panel-body > :nth-child(5) {
-  transition-delay: .4s;
 }
 
 .service-card,
@@ -945,40 +979,64 @@ footer > span {
   opacity: 0;
   transform: translateY(22px);
   transition:
-    opacity .65s ease,
-    transform .65s cubic-bezier(.22, 1, .36, 1);
+    opacity .7s ease var(--reveal-delay, 0ms),
+    transform .7s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms),
+    border-color .4s ease,
+    background .4s ease,
+    box-shadow .4s ease,
+    filter .4s ease;
 }
 
-.section-in-view .service-card,
-.section-in-view .credential-card,
-.section-in-view .team-story p,
-.section-in-view .contact-copy dl > div {
+.service-card.is-visible,
+.credential-card.is-visible,
+.team-story p.is-visible,
+.contact-copy dl > div.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.section-in-view .service-card:nth-child(2),
-.section-in-view .credential-card:nth-child(2),
-.section-in-view .team-story p:nth-child(2),
-.section-in-view .contact-copy dl > div:nth-child(2) {
-  transition-delay: .1s;
+.service-card.is-visible:hover {
+  transform: translate3d(-8px, -2px, 0);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 18%);
 }
 
-.section-in-view .service-card:nth-child(3),
-.section-in-view .credential-card:nth-child(3),
-.section-in-view .team-story p:nth-child(3),
-.section-in-view .contact-copy dl > div:nth-child(3) {
-  transition-delay: .2s;
+.credential-card.is-visible:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 44px rgb(16 23 17 / 18%);
 }
 
-.section-in-view .service-card:nth-child(4),
-.section-in-view .credential-card:nth-child(4) {
-  transition-delay: .3s;
+.service-card > img,
+.credential-card > img,
+.journey-title figure img,
+.map > img {
+  transition: transform .7s cubic-bezier(.22, 1, .36, 1);
 }
 
-.section-in-view .service-card:nth-child(5),
-.section-in-view .credential-card:nth-child(5) {
-  transition-delay: .4s;
+.service-card:hover > img,
+.credential-card:hover > img {
+  transform: scale(1.035);
+}
+
+.orange-button,
+.nav-cta,
+.flow-copy > a,
+footer button {
+  transition:
+    transform .4s cubic-bezier(.22, 1, .36, 1),
+    box-shadow .4s ease,
+    color .4s ease,
+    background .4s ease;
+}
+
+.orange-button:hover,
+.nav-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgb(16 23 17 / 18%);
+}
+
+.flow-copy > a:hover,
+footer button:hover {
+  color: var(--orange);
 }
 
 @media (max-width: 1400px) {
