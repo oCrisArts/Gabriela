@@ -1,0 +1,10 @@
+{
+  "description": "Delivers a responsive website with smooth scroll-triggered animations and animated navigation that enhances user engagement without altering design or content.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
